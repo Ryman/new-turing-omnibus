@@ -8,24 +8,13 @@
             }
             #graph {
                 margin: 0 auto;
-                width: 900px;
-                float: left;
-            }
-            #seed-list {
-                width: 150px;
-                text-align: right;
-                float: right;
-            }
-            #seed-list > tr:first-child {
-                font-size: larger;
-                font-weight: bold;
+                width: 1050px;
             }
         </style>
     </head>
     <body>
         <div id="container">
-            <table id=seed-list></table>
-            <canvas id="graph" width="900" height="650"></canvas>
+            <canvas id="graph" width="1050" height="750"></canvas>
         </div>
 
         <script>
@@ -36,19 +25,6 @@
 
                 var seedList = d.getElementById('seed-list'),
                     offset = 0.01,
-                    displaySeed = function(seed) {
-                        return "" + seed[0] + ", " + seed[1] + ", " + seed[2] + ", " + seed[3]
-                    },
-                    appendSeedList = function(arr) {
-                        var tr = document.createElement("tr");
-                        for (var i = 0; i < arr.length; i++) {
-                            var td = document.createElement('TD')
-                            td.appendChild(document.createTextNode(arr[i]));
-                            tr.appendChild(td)
-                        };
-
-                        seedList.appendChild(tr)
-                    },
                     getRandomInt = function (min, max) {
                         return Math.floor(Math.random() * (max - min + 1)) + min;
                     },
@@ -63,15 +39,6 @@
                             y: canvas.height/2,
                         }
                     },
-                    updateSeedList = function () {
-                        seedList.innerHTML = "";
-                        appendSeedList(["k", "c", "m", "x0"])
-
-
-                        for (var i = 0; i < seeds.length; i++) {
-                            appendSeedList(seeds[i]);
-                        }
-                    }
                     canvas = document.getElementById('graph'),
                     context = canvas.getContext('2d'),
                     updateGraph = function () {
@@ -119,22 +86,19 @@
                                 last_values.splice(i, 1)
                                 // spawn new
                                 generateSeed()
-                                needsRefresh = true;
                             } else {
                                 var s = seeds[i];
                                 last_value.last = (s[0] * last_value.last + s[1]) % s[2]
                             }
                         };
 
-                        if (needsRefresh) { updateSeedList() }
                         raf(updateGraph)
                     };
 
-                for (var i = 100; i >= 0; i--) {
+                for (var i = 200; i >= 0; i--) {
                     generateSeed()
                 };
 
-                updateSeedList();
                 raf(updateGraph)
             }(document, window.requestAnimationFrame));
         </script>
