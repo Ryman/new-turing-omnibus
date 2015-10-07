@@ -21,7 +21,6 @@
             (function (d, raf) {
                 // k, c, m, x0
                 var seeds = [];
-                var last_values = [];
 
                 var seedList = d.getElementById('seed-list'),
                     offset = 0.01,
@@ -29,15 +28,16 @@
                         return Math.floor(Math.random() * (max - min + 1)) + min;
                     },
                     generateSeed = function() {
-                        seeds.push([getRandomInt(15, 30), getRandomInt(25, 75), getRandomInt(75, 125), 25]);
+                        seeds.push({
+                            k: getRandomInt(15, 30),
+                            c: getRandomInt(25, 75),
+                            m: getRandomInt(75, 125),
+                            last: 25,
 
-                        // set x0 for each seed
-                        last_values[seeds.length - 1] = {
-                            last: seeds[seeds.length - 1][3],
                             // set last position
                             x: canvas.width/2,
                             y: canvas.height/2,
-                        }
+                        })
                     },
                     canvas = document.getElementById('graph'),
                     context = canvas.getContext('2d'),
@@ -61,33 +61,32 @@
                         var zoom = 7;
 
                         for (var i = seeds.length - 1; i >= 0; i--) {
-                            var last_value = last_values[i];
-                            var direction = last_value.last & 0b11;
+                            var seed = seeds[i];
+                            var direction = seed.last & 0b11;
 
                             switch (direction) {
-                                case 0: last_value.x += zoom;
+                                case 0: seed.x += zoom;
                                         break
-                                case 1: last_value.x -= zoom;
+                                case 1: seed.x -= zoom;
                                         break
-                                case 2: last_value.y += zoom;
+                                case 2: seed.y += zoom;
                                         break
-                                case 3: last_value.y -= zoom;
+                                case 3: seed.y -= zoom;
                                         break
                             }
 
                             context.fillStyle = "hsla(" + ((i * 5) % 255) + ", 75%, 50%, 1)";
-                            context.fillRect(last_value.x, last_value.y, zoom, zoom)
+                            context.fillRect(seed.x, seed.y, zoom, zoom)
 
-                            if (last_value.x >= canvas.width || last_value.x < 0
-                                || last_value.y >= canvas.height || last_value.y < 0) {
+                            if (seed.x >= canvas.width || seed.x < 0
+                                || seed.y >= canvas.height || seed.y < 0) {
                                 // remove out of bounds
                                 seeds.splice(i, 1)
-                                last_values.splice(i, 1)
+
                                 // spawn new
                                 generateSeed()
                             } else {
-                                var s = seeds[i];
-                                last_value.last = (s[0] * last_value.last + s[1]) % s[2]
+                                seed.last = (seed.k * seed.last + seed.c) % seed.m
                             }
                         };
 
