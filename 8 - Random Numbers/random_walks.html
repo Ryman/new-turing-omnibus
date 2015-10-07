@@ -42,16 +42,6 @@
                     canvas = document.getElementById('graph'),
                     context = canvas.getContext('2d'),
                     updateGraph = function () {
-                        var x = (0.0 + offset);
-                        var n = 0;
-                        var needsRefresh = false;
-
-                        if (x >= 0.9) {
-                            offset = 0.0;
-                        } else {
-                            offset += 0.01;
-                        }
-
                         context.fillStyle = "rgba(255, 255, 255, 0.1)";
                         context.fillRect(0, 0, canvas.width, canvas.height);
                         context.fillStyle = "#000";
