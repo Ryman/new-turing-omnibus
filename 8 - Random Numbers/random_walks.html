@@ -25,7 +25,8 @@
                         zoom: 3,
                         wormCount: 5500,
                         startInCenter: true,
-                        samplesPerNumber: 3
+                        samplesPerNumber: 3,
+                        m: 0,
                     }
 
                     var seeds = [],
@@ -39,7 +40,11 @@
                             var s = seeds[i]
                             s.k = getRandomInt(15, 30);
                             s.c = getRandomInt(25, 75);
-                            s.m = getRandomInt(75, 125);
+                            s.m = config.m;
+                            if (s.m == 0) {
+                                s.m = getRandomInt(75, 125);
+                            }
+
                             s.last = 25;
 
                             if (config.startInCenter) {
@@ -128,6 +133,7 @@
                             controller.onChange(resizeSeedsArray);
 
                             [gui.add(config, 'zoom', 1, 10).step(1),
+                             gui.add(config, 'm', 0, 2000).step(1),
                              gui.add(config, 'startInCenter'),
                              gui.add(config, 'samplesPerNumber', 1, 4).step(1)].map(function(controller) {
                                 controller.onChange(function(_value) {
