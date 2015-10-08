@@ -17,90 +17,132 @@
             <canvas id="graph" width="1050" height="750"></canvas>
         </div>
 
+        <script src="dat.gui.min.js"></script>
         <script>
-            (function (d, raf) {
-                // k, c, m, x0
-                var seeds = [];
+            window.onload = function() {
+                (function (d, raf) {
+                    var config = {
+                        zoom: 3,
+                        wormCount: 5500,
+                        startInCenter: true,
+                        samplesPerNumber: 3
+                    }
 
-                var seedList = d.getElementById('seed-list'),
-                    zoom = 6,
-                    windowSample = 0,
-                    windowSampleMax = 2,
-                    offset = 0.01,
-                    getRandomInt = function (min, max) {
-                        return Math.floor(Math.random() * (max - min + 1)) + min;
-                    },
-                    resetSeed = function(i) {
-                        var s = seeds[i]
-                        s.k = getRandomInt(15, 30);
-                        s.c = getRandomInt(25, 75);
-                        s.m = getRandomInt(75, 125);
-                        s.last = 25;
+                    var seeds = [],
+                        gui = new dat.GUI(),
+                        currentSample = 0,
+                        offset = 0.01,
+                        getRandomInt = function (min, max) {
+                            return Math.floor(Math.random() * (max - min + 1)) + min;
+                        },
+                        resetSeed = function(i) {
+                            var s = seeds[i]
+                            s.k = getRandomInt(15, 30);
+                            s.c = getRandomInt(25, 75);
+                            s.m = getRandomInt(75, 125);
+                            s.last = 25;
 
-                        s.x = canvas.width/2;
-                        s.y = canvas.height/2;
-                    },
-                    canvas = document.getElementById('graph'),
-                    context = canvas.getContext('2d'),
-                    move = function(idx) {
-                        var seed = seeds[idx];
-                        var direction = (seed.last >> (windowSample * 2)) & 0b11;
+                            if (config.startInCenter) {
+                                s.x = canvas.width/2;
+                                s.y = canvas.height/2;
+                            } else {
+                                s.x = getRandomInt(10, canvas.width - 10);
+                                s.y = getRandomInt(10, canvas.height - 10);
+                            }
+                        },
+                        resizeSeedsArray = function(newLen) {
+                            var oldLen = seeds.length;
 
-                        switch (direction) {
-                            case 0: seed.x += zoom;
-                                    break
-                            case 1: seed.x -= zoom;
-                                    break
-                            case 2: seed.y += zoom;
-                                    break
-                            case 3: seed.y -= zoom;
-                                    break
+                            // add new if value is higher
+                            for (var i = oldLen; i < newLen; i++) {
+                                seeds.push({
+                                    fillStyle: "hsla(" + ((i * 5) % 255) + ", 75%, 50%, 1)",
+                                });
+                                resetSeed(i);
+                            };
+
+                            // truncate if lower value
+                            seeds.splice(newLen);
+                        },
+                        canvas = document.getElementById('graph'),
+                        context = canvas.getContext('2d'),
+                        move = function(idx) {
+                            var seed = seeds[idx];
+                            var direction = (seed.last >> (currentSample * 2)) & 0b11;
+                            var zoom = config.zoom;
+
+                            switch (direction) {
+                                case 0: seed.x += zoom;
+                                        break
+                                case 1: seed.x -= zoom;
+                                        break
+                                case 2: seed.y += zoom;
+                                        break
+                                case 3: seed.y -= zoom;
+                                        break
+                            }
+
+                            if (seed.x >= canvas.width || seed.x < 0
+                                || seed.y >= canvas.height || seed.y < 0) {
+                                // replace when out of bounds
+                                resetSeed(idx);
+                            } else if (currentSample == (config.samplesPerNumber - 1)) {
+                                seed.last = (seed.k * seed.last + seed.c) % seed.m;
+                            }
+                        },
+                        moveSeeds = function() {
+                            for (var i = seeds.length - 1; i >= 0; i--) {
+                                move(i);
+                            }
+
+                            currentSample = (currentSample + 1) % config.samplesPerNumber;
+                        },
+                        drawSeeds = function() {
+                            var zoom = config.zoom;
+                            for (var i = seeds.length - 1; i >= 0; i--) {
+                                var seed = seeds[i];
+
+                                context.fillStyle = seed.fillStyle;
+                                context.fillRect(seed.x, seed.y, zoom, zoom)
+                            };
+                        },
+                        resetSeeds = function() {
+                            for (var i = seeds.length - 1; i >= 0; i--) {
+                                resetSeed(i)
+                            };
                         }
+                        updateGraph = function () {
+                            context.fillStyle = "rgba(255, 255, 255, 0.1)";
+                            context.fillRect(0, 0, canvas.width, canvas.height);
+                            context.fillStyle = "#000";
 
-                        if (seed.x >= canvas.width || seed.x < 0
-                            || seed.y >= canvas.height || seed.y < 0) {
-                            // replace when out of bounds
-                            resetSeed(idx);
-                        } else if (windowSample == (windowSampleMax - 1)) {
-                            seed.last = (seed.k * seed.last + seed.c) % seed.m;
-                        }
-                    },
-                    moveSeeds = function() {
-                        for (var i = seeds.length - 1; i >= 0; i--) {
-                            move(i);
-                            windowSample = (windowSample + 1) % windowSampleMax;
-                        }
-                    },
-                    drawSeeds = function() {
-                        for (var i = seeds.length - 1; i >= 0; i--) {
-                            var seed = seeds[i];
+                            context.strokeRect(0, 0, canvas.width, canvas.height);
 
-                            context.fillStyle = seed.fillStyle;
-                            context.fillRect(seed.x, seed.y, zoom, zoom)
+                            moveSeeds();
+                            drawSeeds();
+
+                            raf(updateGraph)
+                        },
+                        setupGUI = function() {
+                            var controller = gui.add(config, 'wormCount', 250, 20000).step(250);
+                            controller.onChange(resizeSeedsArray);
+
+                            [gui.add(config, 'zoom', 1, 10).step(1),
+                             gui.add(config, 'startInCenter'),
+                             gui.add(config, 'samplesPerNumber', 1, 4).step(1)].map(function(controller) {
+                                controller.onChange(function(_value) {
+                                    resetSeeds();
+                                    context.clearRect(0, 0, canvas.width, canvas.height);
+                                    windowSample = 0;
+                                });
+                             })
                         };
-                    },
-                    updateGraph = function () {
-                        context.fillStyle = "rgba(255, 255, 255, 0.1)";
-                        context.fillRect(0, 0, canvas.width, canvas.height);
-                        context.fillStyle = "#000";
 
-                        context.strokeRect(0, 0, canvas.width, canvas.height);
-
-                        moveSeeds();
-                        drawSeeds();
-
-                        raf(updateGraph)
-                    };
-
-                for (var i = 0; i <= 500; i++) {
-                    seeds.push({
-                        fillStyle: "hsla(" + ((i * 5) % 255) + ", 75%, 50%, 1)",
-                    });
-                    resetSeed(i);
-                };
-
-                raf(updateGraph)
-            }(document, window.requestAnimationFrame));
+                    setupGUI();
+                    resizeSeedsArray(config.wormCount);
+                    raf(updateGraph);
+                }(document, window.requestAnimationFrame));
+            }
         </script>
     </body>
 </html>
