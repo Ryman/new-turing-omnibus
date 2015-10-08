@@ -23,6 +23,9 @@
                 var seeds = [];
 
                 var seedList = d.getElementById('seed-list'),
+                    zoom = 6,
+                    windowSample = 0,
+                    windowSampleMax = 2,
                     offset = 0.01,
                     getRandomInt = function (min, max) {
                         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -39,6 +42,43 @@
                     },
                     canvas = document.getElementById('graph'),
                     context = canvas.getContext('2d'),
+                    move = function(idx) {
+                        var seed = seeds[idx];
+                        var direction = (seed.last >> (windowSample * 2)) & 0b11;
+
+                        switch (direction) {
+                            case 0: seed.x += zoom;
+                                    break
+                            case 1: seed.x -= zoom;
+                                    break
+                            case 2: seed.y += zoom;
+                                    break
+                            case 3: seed.y -= zoom;
+                                    break
+                        }
+
+                        if (seed.x >= canvas.width || seed.x < 0
+                            || seed.y >= canvas.height || seed.y < 0) {
+                            // replace when out of bounds
+                            resetSeed(idx);
+                        } else if (windowSample == (windowSampleMax - 1)) {
+                            seed.last = (seed.k * seed.last + seed.c) % seed.m;
+                        }
+                    },
+                    moveSeeds = function() {
+                        for (var i = seeds.length - 1; i >= 0; i--) {
+                            move(i);
+                            windowSample = (windowSample + 1) % windowSampleMax;
+                        }
+                    },
+                    drawSeeds = function() {
+                        for (var i = seeds.length - 1; i >= 0; i--) {
+                            var seed = seeds[i];
+
+                            context.fillStyle = seed.fillStyle;
+                            context.fillRect(seed.x, seed.y, zoom, zoom)
+                        };
+                    },
                     updateGraph = function () {
                         context.fillStyle = "rgba(255, 255, 255, 0.1)";
                         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -46,34 +86,8 @@
 
                         context.strokeRect(0, 0, canvas.width, canvas.height);
 
-                        var zoom = 6;
-
-                        for (var i = seeds.length - 1; i >= 0; i--) {
-                            var seed = seeds[i];
-                            var direction = seed.last & 0b11;
-
-                            switch (direction) {
-                                case 0: seed.x += zoom;
-                                        break
-                                case 1: seed.x -= zoom;
-                                        break
-                                case 2: seed.y += zoom;
-                                        break
-                                case 3: seed.y -= zoom;
-                                        break
-                            }
-
-                            context.fillStyle = seed.fillStyle;
-                            context.fillRect(seed.x, seed.y, zoom, zoom)
-
-                            if (seed.x >= canvas.width || seed.x < 0
-                                || seed.y >= canvas.height || seed.y < 0) {
-                                // replace when out of bounds
-                                resetSeed(i);
-                            } else {
-                                seed.last = (seed.k * seed.last + seed.c) % seed.m;
-                            }
-                        };
+                        moveSeeds();
+                        drawSeeds();
 
                         raf(updateGraph)
                     };
