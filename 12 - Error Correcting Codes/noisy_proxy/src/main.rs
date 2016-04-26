@@ -30,10 +30,17 @@ fn pipe(input: &mut Read, output: &mut Write, slider_value: Arc<Mutex<f64>>) {
     for b in input.bytes() {
         let mut b = b.expect("Failed to read");
 
-        let r = sample_range.ind_sample(&mut rng);
-        if r < *slider_value.lock().expect("Failed to sync slider value") {
-            // flip a bit
-            b ^= 0b00010000
+        // Chance to flip *at least one bit*
+        let flip_percent = *slider_value.lock().expect("Failed to sync slider value");
+
+        // Give it a chance to flip each bit
+        for i in 0..8 {
+            let r = sample_range.ind_sample(&mut rng);
+
+            if r < flip_percent / 8.0 {
+                // flip a bit
+                b ^= 1 << i
+            }
         }
 
         output.write(&[b]).expect("Failed to write");
