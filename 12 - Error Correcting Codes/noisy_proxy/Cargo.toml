@@ -1,0 +1,7 @@
+[package]
+authors = ["Kevin Butler <haqkrs@gmail.com>"]
+name = "noisy_proxy"
+version = "0.1.0"
+
+[dependencies]
+rand = "0.3.14"
