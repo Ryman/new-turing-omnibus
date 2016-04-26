@@ -4,4 +4,7 @@ name = "noisy_proxy"
 version = "0.1.0"
 
 [dependencies]
+conrod = "0.34.0"
+find_folder = "0.3.0"
+piston_window = "0.44.0"
 rand = "0.3.14"
